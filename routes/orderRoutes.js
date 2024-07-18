@@ -1,59 +1,63 @@
 const express = require('express');
 const router = express.Router();
-const OrderItem = require('../models/orderItem');
+const Order = require('../models/order');
+const Product = require('../models/product');
 const authenticateAccessToken = require('../middleware/authenticateAccessToken');
 const isAdmin = require('../middleware/isAdmin');
 
-
-router.get('/', authenticateAccessToken, async (req, res) => {
+// Get
+router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
-        const orders = await OrderItem.find().populate('product');
+        const orders = await Order.find().populate('products').populate('owner');
         res.json(orders);
     } catch (error) {
         res.status(500).send(`Error fetching orders: ${error.message}`);
     }
 });
 
-
+// Create
 router.post('/create', authenticateAccessToken, async (req, res) => {
     try {
-        const { product, quantity } = req.body;
+        const { products } = req.body;
+        const userId = req.user.id;
 
-        const newOrderItem = new OrderItem({
-            product,
-            quantity
+        const newOrder = new Order({
+            products,
+            owner: userId,
+            status: 'Pending'
         });
 
-        await newOrderItem.save();
-        res.status(201).json(newOrderItem);
+        await newOrder.save();
+        res.status(201).json(newOrder);
     } catch (error) {
         res.status(500).send(`Error creating order: ${error.message}`);
     }
 });
 
-
-router.put('/:id', authenticateAccessToken, async (req, res) => {
+// Update
+router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        const { product, quantity } = req.body;
-        const orderItem = await OrderItem.findById(id);
-        if (!orderItem) {
+        const { products, status } = req.body;
+        const order = await Order.findById(id);
+        if (!order) {
             return res.status(404).send('Order not found');
         }
-        if (product) orderItem.product = product;
-        if (quantity) orderItem.quantity = quantity;
-        await orderItem.save();
-        res.json(orderItem);
+        if (products) order.products = products;
+        if (status) order.status = status;
+        await order.save();
+        res.json(order);
     } catch (error) {
         res.status(500).send(`Error updating order: ${error.message}`);
     }
 });
 
+// Delete
 router.delete('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        const orderItem = await OrderItem.findByIdAndDelete(id);
-        if (!orderItem) {
+        const order = await Order.findByIdAndDelete(id);
+        if (!order) {
             return res.status(404).send('Order not found');
         }
         res.send('Order deleted');

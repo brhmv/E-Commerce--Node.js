@@ -4,27 +4,46 @@ const Product = require('../models/product');
 const authenticateAccessToken = require('../middleware/authenticateAccessToken');
 const isAdmin = require('../middleware/isAdmin');
 
-
+// Get products
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find();
-        res.json(products);
+        const { page = 1, limit = 10 } = req.query;
+
+        const products = await Product.find()
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const totalProducts = await Product.countDocuments();
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        res.json({
+            products,
+            totalProducts,
+            totalPages,
+            currentPage: parseInt(page),
+            perPage: parseInt(limit)
+        });
     } catch (error) {
         res.status(500).send(`Error fetching products: ${error.message}`);
     }
 });
 
-
+// Create 
 router.post('/create', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
-        const { name, description, price, stock, gallery } = req.body;
+        const { name, description, price, stock, gallery, category } = req.body;
+
+        if (!name || !description || !price || !stock || !gallery || !category) {
+            return res.status(400).send('All fields are required');
+        }
 
         const newProduct = new Product({
             name,
             description,
             price,
             stock,
-            gallery
+            gallery,
+            category
         });
 
         await newProduct.save();
@@ -34,6 +53,7 @@ router.post('/create', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
+// Get product by ID
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -47,7 +67,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.put('/:id', async (req, res) => {
+// Update product
+router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { name, description, price, stock, gallery, category } = req.body;
@@ -68,7 +89,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+// Delete product
+router.delete('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const product = await Product.findByIdAndDelete(id);

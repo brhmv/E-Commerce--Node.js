@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema({
     stock: { type: Number, required: true },
     gallery: { type: [String], required: true },
     category: { type: String, required: true, enum: ["Tech", "Clothing", "Cars"], },
+    order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' }
 });
 
 module.exports = mongoose.model('Product', productSchema);

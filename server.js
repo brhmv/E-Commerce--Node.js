@@ -5,6 +5,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const basketRoutes = require('./routes/basketRoutes');
 
 const app = express();
 const port = 3000;
@@ -20,6 +21,7 @@ app.use('/orders', orderRoutes);
 app.use('/products', productRoutes);
 app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
+app.use('/basket', basketRoutes);
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);

@@ -54,14 +54,18 @@ router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { products, status } = req.body;
-        const order = await Order.findById(id);
-        if (!order) {
+
+        const updatedOrder = await Order.findByIdAndUpdate(
+            id,
+            { products, status },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedOrder) {
             return res.status(404).send('Order not found');
         }
-        if (products) order.products = products;
-        if (status) order.status = status;
-        await order.save();
-        res.json(order);
+
+        res.json(updatedOrder);
     } catch (error) {
         res.status(500).send(`Error updating order: ${error.message}`);
     }
@@ -80,4 +84,3 @@ router.delete('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
         res.status(500).send(`Error deleting order: ${error.message}`);
     }
 });
-

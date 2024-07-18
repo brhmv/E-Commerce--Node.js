@@ -23,6 +23,7 @@ router.get('/', async (req, res) => {
             currentPage: parseInt(page),
             perPage: parseInt(limit)
         });
+
     } catch (error) {
         res.status(500).send(`Error fetching products: ${error.message}`);
     }

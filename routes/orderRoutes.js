@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/order');
-const Product = require('../models/product');
 const authenticateAccessToken = require('../middleware/authenticateAccessToken');
 const isAdmin = require('../middleware/isAdmin');
 
-// Get
+// Get all orders (only admin)
 router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const orders = await Order.find().populate('products').populate('owner');
@@ -15,7 +14,23 @@ router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
-// Create
+// Get orders by user
+router.get('/user', authenticateAccessToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orders = await Order.find({ owner: userId }).populate('products');
+        if (!orders) {
+            return res.status(404).send('No orders found for this user');
+        }
+        res.json(orders);
+    } catch (error) {
+        res.status(500).send(`Error fetching user orders: ${error.message}`);
+    }
+});
+
+module.exports = router;
+
+// Create new order
 router.post('/create', authenticateAccessToken, async (req, res) => {
     try {
         const { products } = req.body;
@@ -34,7 +49,7 @@ router.post('/create', authenticateAccessToken, async (req, res) => {
     }
 });
 
-// Update
+// Update order (only admin)
 router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -52,7 +67,7 @@ router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
-// Delete
+// Delete  order (only admin)
 router.delete('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -66,4 +81,3 @@ router.delete('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
-module.exports = router;

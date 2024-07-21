@@ -4,7 +4,7 @@ const User = require('../models/user');
 const authenticateAccessToken = require('../middleware/authenticateAccessToken');
 const isAdmin = require('../middleware/isAdmin');
 
-
+//get all users
 router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const users = await User.find();
@@ -14,6 +14,26 @@ router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
+// Search 
+router.get('/search', authenticateAccessToken, isAdmin, async (req, res) => {
+    try {
+        const { searchTerm } = req.query;
+        const regex = new RegExp(searchTerm, 'i'); // 'i' for case-insensitive
+        const users = await User.find({
+            $or: [
+                { username: { $regex: regex } },
+                { email: { $regex: regex } },
+                { firstname: { $regex: regex } },
+                { lastname: { $regex: regex } }
+            ]
+        });
+        res.json(users);
+    } catch (error) {
+        res.status(500).send(`Error searching users: ${error.message}`);
+    }
+});
+
+// get by id
 router.get('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -27,6 +47,7 @@ router.get('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
+//edit by id
 router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -45,6 +66,7 @@ router.put('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     }
 });
 
+//delete by id
 router.delete('/:id', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { id } = req.params;

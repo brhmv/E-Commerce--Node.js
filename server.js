@@ -1,6 +1,40 @@
+// const express = require('express');
+// const mongoose = require('mongoose');
+// require('dotenv').config();
+// const orderRoutes = require('./routes/orderRoutes');
+// const productRoutes = require('./routes/productRoutes');
+// const userRoutes = require('./routes/userRoutes');
+// const authRoutes = require('./routes/authRoutes');
+// const basketRoutes = require('./routes/basketRoutes');
+
+// const app = express();
+// const port = 3000;
+
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// mongoose.connect(process.env.MONGODB_URI)
+//     .then(() => console.log('Connected to MongoDB'))
+//     .catch(err => console.error('Connection error:', err));
+
+// app.use('/orders', orderRoutes);
+// app.use('/products', productRoutes);
+// app.use('/users', userRoutes);
+// app.use('/auth', authRoutes);
+// app.use('/basket', basketRoutes);
+
+// app.listen(port, () => {
+//     console.log(`Server running at http://localhost:${port}`);
+// });
+
+
+
+
+const cluster = require('cluster');
+const os = require('os');
 const express = require('express');
 const mongoose = require('mongoose');
-require('dotenv').config();
+require("dotenv").config();
 const orderRoutes = require('./routes/orderRoutes');
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -8,21 +42,35 @@ const authRoutes = require('./routes/authRoutes');
 const basketRoutes = require('./routes/basketRoutes');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+if (cluster.isMaster) {
+    const numCPUs = os.cpus().length;
 
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Connection error:', err));
+    console.log(`Master ${process.pid} is running`);
+    console.log(`Forking ${numCPUs} workers...`);
 
-app.use('/orders', orderRoutes);
-app.use('/products', productRoutes);
-app.use('/users', userRoutes);
-app.use('/auth', authRoutes);
-app.use('/basket', basketRoutes);
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork();
+    }
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
+    cluster.on('exit', (worker, code, signal) => {
+        console.log(`Worker ${worker.process.pid} died. Forking a new one...`);
+        cluster.fork();
+    });
+} else {
+    mongoose.connect(process.env.MONGODB_URI)
+        .then(() => console.log(`Connected to MongoDB`))
+        .catch(err => console.error('Connection error:', err));
+
+    app.use('/orders', orderRoutes);
+    app.use('/products', productRoutes);
+    app.use('/users', userRoutes);
+    app.use('/auth', authRoutes);
+    app.use('/basket', basketRoutes);
+
+
+    app.listen(port, () => {
+        console.log(`Worker ${process.pid} running on port ${port}`);
+    });
+}

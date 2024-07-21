@@ -29,6 +29,24 @@ router.get('/', async (req, res) => {
     }
 });
 
+//search
+router.get('/search', async (req, res) => {
+    try {
+        const { searchTerm } = req.query;
+        const regex = new RegExp(searchTerm, 'i'); // 'i' for case-insensitive
+        const products = await Product.find({
+            $or: [
+                { name: { $regex: regex } },
+                { description: { $regex: regex } },
+                { category: { $regex: regex } }
+            ]
+        });
+        res.json(products);
+    } catch (error) {
+        res.status(500).send(`Error searching products: ${error.message}`);
+    }
+});
+
 // Create 
 router.post('/create', authenticateAccessToken, isAdmin, async (req, res) => {
     try {

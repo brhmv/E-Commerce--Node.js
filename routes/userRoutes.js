@@ -18,7 +18,7 @@ router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
 router.get('/search', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { searchTerm } = req.query;
-        const regex = new RegExp(searchTerm, 'i'); // 'i' for case-insensitive
+        const regex = new RegExp(searchTerm, 'i');
         const users = await User.find({
             $or: [
                 { username: { $regex: regex } },

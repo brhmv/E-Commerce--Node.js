@@ -7,8 +7,19 @@ const isAdmin = require('../middleware/isAdmin');
 //get all users
 router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
-        const users = await User.find();
-        res.json(users);
+        const { page = 1, limit = 10 } = req.query;
+        const users = await User.find()
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .exec();
+
+        const count = await User.countDocuments();
+
+        res.json({
+            users,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page
+        });
     } catch (error) {
         res.status(500).send(`Error fetching users: ${error.message}`);
     }
@@ -18,7 +29,7 @@ router.get('/', authenticateAccessToken, isAdmin, async (req, res) => {
 router.get('/search', authenticateAccessToken, isAdmin, async (req, res) => {
     try {
         const { searchTerm } = req.query;
-        const regex = new RegExp(searchTerm, 'i'); // 'i' for case-insensitive
+        const regex = new RegExp(searchTerm, 'i');
         const users = await User.find({
             $or: [
                 { username: { $regex: regex } },

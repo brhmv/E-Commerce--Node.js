@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
 router.get('/search', async (req, res) => {
     try {
         const { searchTerm } = req.query;
-        const regex = new RegExp(searchTerm, 'i'); // 'i' for case-insensitive
+        const regex = new RegExp(searchTerm, 'i');
         const products = await Product.find({
             $or: [
                 { name: { $regex: regex } },
